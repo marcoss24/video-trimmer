@@ -1,23 +1,42 @@
 import Foundation
 import AVFoundation
+import React
 
 @objc(VideoTrimmer)
-class VideoTrimmer: NSObject {
+class VideoTrimmer: RCTEventEmitter {
   
-  @objc func trimVideo(sourceURL: String, startTime: Double, endTime: Double, callback: @escaping RCTResponseSenderBlock) {
+  @objc(trimVideo:startTime:endTime:callback:)
+  func trimVideo(sourceURL: String, startTime: Double, endTime: Double, callback: @escaping RCTResponseSenderBlock) {
     let manager = FileManager.default
     guard let documentsPath = manager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
       callback(["Could not find cache directory", NSNull()])
       return
     }
-    let outputPath = documentsPath.appendingPathComponent(UUID().uuidString).appendingPathExtension("mov").path
+    
+    // Determine the file extension to preserve the original format
+    let fileExtension = URL(fileURLWithPath: sourceURL).pathExtension
+    let outputPath = documentsPath.appendingPathComponent(UUID().uuidString).appendingPathExtension(fileExtension).path
     
     let asset = AVAsset(url: URL(fileURLWithPath: sourceURL))
-    let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHighestQuality)!
+    guard let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHighestQuality) else {
+      callback(["Could not create AVAssetExportSession", NSNull()])
+      return
+    }
     
     exportSession.outputURL = URL(fileURLWithPath: outputPath)
-    exportSession.outputFileType = .mov
-    exportSession.timeRange = CMTimeRangeFromTimeToTime(start: CMTimeMakeWithSeconds(startTime, preferredTimescale: 600), end: CMTimeMakeWithSeconds(endTime, preferredTimescale: 600))
+    
+    // Preserving the original video format
+    switch fileExtension.lowercased() {
+    case "mov":
+        exportSession.outputFileType = .mov
+    case "mp4":
+        exportSession.outputFileType = .mp4
+    default:
+        callback(["Unsupported file format", NSNull()])
+        return
+    }
+    
+    exportSession.timeRange = CMTimeRange(start: CMTimeMakeWithSeconds(startTime, preferredTimescale: 600), end: CMTimeMakeWithSeconds(endTime, preferredTimescale: 600))
     
     exportSession.exportAsynchronously {
       switch exportSession.status {
@@ -29,5 +48,15 @@ class VideoTrimmer: NSObject {
         break
       }
     }
+  }
+  
+  override func supportedEvents() -> [String]! {
+    // Return an array of event names if your module may emit events to JavaScript
+    return []
+  }
+
+  @objc
+  override static func requiresMainQueueSetup() -> Bool {
+    return true
   }
 }
