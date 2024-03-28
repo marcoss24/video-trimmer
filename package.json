@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A React Native module for trimming videos for iOS",
   "main": "src/index.js",
+  "homepage": "https://github.com/marcoss24/knight-video-trimmer",
   "react-native": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
