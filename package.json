@@ -1,5 +1,5 @@
 {
-  "name": "knight-video-trimmer",
+  "name": "react-native-video-trim2",
   "version": "1.0.0",
   "description": "A React Native module for trimming videos for iOS",
   "main": "src/index.js",
